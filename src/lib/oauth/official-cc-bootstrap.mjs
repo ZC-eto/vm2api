@@ -51,6 +51,7 @@ import { atomicWriteJson, listVmRecordFiles } from '../vm/vm-file.mjs'
 import { CONTAINER_CLI_NODE_BIN, normalizeOfficialCcInference, resolveOfficialCcInference } from '../vm/slot-engine.mjs'
 import { getVm } from '../vm/vm-registry.mjs'
 import { slotHost } from '../vm/slot-host.mjs'
+import { CRS_OFFICIAL_CLI_SYSTEM } from '../identity/crs-persona.mjs'
 
 export { officialCcUidGid } from '../vm/vm-runtime.mjs'
 export const DEFAULT_HELLO_PROMPT = 'hello'
@@ -802,6 +803,13 @@ export function buildOfficialCcDockerArgs({
 }) {
   const text = String(prompt || '').trim() || DEFAULT_PLAN_PROMPT
   const slash = isOfficialCcSlashPrompt(text)
+  // This turn is the one path where the slot CLI talks to api.anthropic.com
+  // directly: the build strips the first-party identity block and the gateway
+  // persona never runs. Without the CLI identity line the API refuses OAuth
+  // inference with 429 rate_limit_error "Error" (no retry-after, no
+  // anthropic-ratelimit-*), hello never completes and /usage never runs.
+  // `--append-system-prompt` lands as system[0], the position the official
+  // build uses; the compact Agent SDK identity is refused (429).
   return slotExecArgv(
     vm || { id: vmId },
     [
@@ -809,6 +817,8 @@ export function buildOfficialCcDockerArgs({
       ...(slash
         ? [text, '--print', '--permission-mode', 'bypassPermissions', '--output-format', 'stream-json', '--verbose']
         : ['-p', text, '--permission-mode', 'bypassPermissions', '--output-format', 'json']),
+      '--append-system-prompt',
+      CRS_OFFICIAL_CLI_SYSTEM,
     ],
     {
       user: `${uid}:${gid}`,

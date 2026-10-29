@@ -3,6 +3,7 @@
 ## Unreleased
 
 - 决策模型收窄今天的误伤。综合、破限、逆向、渗透、网络攻击五题明确放过：修本机故障时的「所有权限都给你」和 tool loaded、抄进来的审查说明、阅读自己的或客户的源码、路径里的「反编译」、在自己的机器上搭中转并设置登录密码，以及排查已交付系统的 ssh、redis、kafka 和配置密码。色情、暴力伤害、破解授权、明确越狱、对未授权目标的渗透和窃取别人的凭据仍然拦。
+- #816：官方初装：`hello` 与槽内 `/usage` 两条命令补 `--append-system-prompt` 首方身份行（`You are Claude Code, Anthropic's official CLI for Claude.`）。槽内 cli-node 是删掉首方身份块的构建（网关路径由模板重建 system，直连路径没人补），初装是唯一让该 CLI 直连 `api.anthropic.com` 的路径，缺身份块时上游按「认不出官方流量」直接回 `429 rate_limit_error "Error"`（无 `retry-after`、无 `anthropic-ratelimit-*`），表现为 `official claude hello=1 usage=fail`。已在 v1.4.025 实机槽验证：加行前 744ms 429，加行后 hello / `/usage` 均 200，初装 `status=ok`、`account_tier_source` 由 `default` 变为 `usage`。
 
 ## 1.4.025 — 2026-10-28
 

@@ -34,6 +34,7 @@ import {
   finalizeOfficialCcTelemetry,
 } from '../../src/lib/oauth/official-cc-bootstrap.mjs'
 import { OFFICIAL_CLI_VERSION } from '../../src/lib/identity/vm-identity.mjs'
+import { CRS_OFFICIAL_CLI_SYSTEM } from '../../src/lib/identity/crs-persona.mjs'
 
 test('uid follows vm index', () => {
   assert.deepEqual(officialCcUidGid('vm-30'), { uid: 10030, gid: 987 })
@@ -126,6 +127,10 @@ test('docker args use hello//usage bypassPermissions without CONNECT proxy', () 
   assert.ok(args.includes('USER_TYPE=external'))
   assert.equal(args.includes('CI=1'), false)
   assert.equal(args[args.indexOf('kin-30') + 1], '/home/kincli/.kin/cli-node')
+  // The slot build drops the first-party identity block; api.anthropic.com
+  // answers OAuth inference without it with 429 rate_limit_error "Error".
+  assert.equal(args[args.indexOf('--append-system-prompt') + 1], CRS_OFFICIAL_CLI_SYSTEM)
+  assert.match(CRS_OFFICIAL_CLI_SYSTEM, /^You are Claude Code, Anthropic's official CLI for Claude\.$/)
   const usageArgs = buildOfficialCcDockerArgs({
     vmId: 'vm-30',
     uid: 10030,
@@ -137,6 +142,7 @@ test('docker args use hello//usage bypassPermissions without CONNECT proxy', () 
   // plain json envelope drops.
   assert.equal(usageArgs[usageArgs.indexOf('--output-format') + 1], 'stream-json')
   assert.ok(usageArgs.includes('--verbose'))
+  assert.equal(usageArgs[usageArgs.indexOf('--append-system-prompt') + 1], CRS_OFFICIAL_CLI_SYSTEM)
 })
 
 test('official hello success requires a parsed result, empty stdout is a failure', () => {
